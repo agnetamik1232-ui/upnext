@@ -2,7 +2,7 @@
 import * as W from "./watch.js";
 import { app, actions, forms, live, render, closeSheet, isSheetOpen } from "./core.js";
 import { todayISO } from "./dates.js";
-import { shell } from "./views.js";
+import { shell, nightState } from "./views.js";
 import { applyLook, renderUnlock, renderSetup, titleSheet, watchedSheet, yearCard, syncSeries, enrichFilms } from "./flows.js";
 import { blankState } from "./model.js";
 import { demoState } from "./demo.js";
@@ -18,7 +18,7 @@ app.start = () => { app.renderFn = renderApp; applyLook(); renderApp(); if (app.
 
 // Demo only: open a given screen straight away (for listing photos and videos).
 //   ?demo&photo  &look=cinema_night  &view=library|night|streaming|stats|settings  &kind=series  &filter=watchlist
-//   &open=add | add:<query> | title:<title> | watched:<title> | import | yearcard | svc   &hour=20 (greeting)   &scroll=.eps (inside the open sheet)
+//   &open=add | add:<query> | title:<title> | watched:<title> | import | yearcard | svc   &hour=20 (greeting)   &scroll=.eps (inside the open sheet)   &pick=<film> (Movie night)
 function demoExtras() {
   const look = params.get("look"), view = params.get("view"), open = params.get("open") || "";
   if (look) { app.S.profile.look = look; applyLook(); }
@@ -26,7 +26,8 @@ function demoExtras() {
   if (params.get("kind")) app.libKind = params.get("kind");
   if (params.get("filter")) app.libFilter = params.get("filter");
   if (params.get("hour")) app.hour = Number(params.get("hour"));
-  if (look || view || params.get("kind") || params.get("filter") || params.get("hour")) render();
+  if (params.get("pick")) { const t = app.S.titles.find(x => x.title.toLowerCase() === params.get("pick").toLowerCase()); if (t) nightState().pick = t.id; }
+  if (look || view || params.get("kind") || params.get("filter") || params.get("hour") || params.get("pick")) render();
   const fire = (act, data = {}) => { const el = document.createElement("button"); Object.assign(el.dataset, data); actions[act]?.(el); };
   const byTitle = t => app.S.titles.find(x => x.title.toLowerCase() === t.toLowerCase());
   if (open === "add") fire("add-title");
@@ -35,7 +36,11 @@ function demoExtras() {
   if (open.startsWith("watched:")) { const t = byTitle(open.slice(8)); if (t) watchedSheet(t); }
   if (open === "import") fire("import");
   const to = params.get("scroll");   // e.g. &scroll=.eps : scroll the open sheet so that part is at the top
-  if (to) setTimeout(() => { const sh = document.querySelector("#sheet-root .sheet"), el = sh && sh.querySelector(to); if (el) sh.scrollTop = el.getBoundingClientRect().top - sh.getBoundingClientRect().top + sh.scrollTop - 70; }, 300);
+  if (to) setTimeout(() => {   // shifts the content rather than scrolling, so headless screenshots keep it
+    const sh = document.querySelector("#sheet-root .sheet"), el = sh && sh.querySelector(to); if (!el) return;
+    const off = Math.round(el.getBoundingClientRect().top - sh.getBoundingClientRect().top - 70);
+    sh.style.overflow = "hidden"; [...sh.children].forEach(c => { c.style.transform = `translateY(${-off}px)`; });
+  }, 300);
   if (open === "svc") fire("svc-edit", { id: "netflix" });
   if (open === "yearcard") yearCard(Number(app.today.slice(0, 4))).then(blob => { document.body.style.margin = "0"; document.body.innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="" style="display:block;width:1080px;height:1920px">`; });
 }
