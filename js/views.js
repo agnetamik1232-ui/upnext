@@ -11,7 +11,7 @@ export const APP_VERSION = "1.0.0";
 const NAV = [["home", "Home"], ["library", "Library"], ["night", "Movie night"], ["streaming", "Streaming"], ["stats", "Stats"]];
 const S = () => app.S;
 const open = t => `data-act="open-title" data-id="${t.id}"`;
-const greet = () => { const h = new Date().getHours(); return h < 12 ? "morning" : h < 18 ? "afternoon" : "evening"; };
+const greet = () => { const h = app.hour ?? new Date().getHours(); return h < 12 ? "morning" : h < 18 ? "afternoon" : "evening"; };
 const months = d => { const n = Math.round(Math.max(0, diffDays(d, app.today)) / 30.4); return n <= 1 ? (diffDays(d, app.today) < 21 ? "a few weeks" : "a month") : `${n} months`; };
 
 export function shell() {

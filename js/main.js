@@ -18,14 +18,15 @@ app.start = () => { app.renderFn = renderApp; applyLook(); renderApp(); if (app.
 
 // Demo only: open a given screen straight away (for listing photos and videos).
 //   ?demo&photo  &look=cinema_night  &view=library|night|streaming|stats|settings  &kind=series  &filter=watchlist
-//   &open=add | add:<query> | title:<title> | season:<n> | watched:<title> | import | yearcard | svc
+//   &open=add | add:<query> | title:<title> | watched:<title> | import | yearcard | svc   &hour=20 (greeting)   &scroll=.eps (inside the open sheet)
 function demoExtras() {
   const look = params.get("look"), view = params.get("view"), open = params.get("open") || "";
   if (look) { app.S.profile.look = look; applyLook(); }
   if (view) app.view = view;
   if (params.get("kind")) app.libKind = params.get("kind");
   if (params.get("filter")) app.libFilter = params.get("filter");
-  if (look || view || params.get("kind") || params.get("filter")) render();
+  if (params.get("hour")) app.hour = Number(params.get("hour"));
+  if (look || view || params.get("kind") || params.get("filter") || params.get("hour")) render();
   const fire = (act, data = {}) => { const el = document.createElement("button"); Object.assign(el.dataset, data); actions[act]?.(el); };
   const byTitle = t => app.S.titles.find(x => x.title.toLowerCase() === t.toLowerCase());
   if (open === "add") fire("add-title");
@@ -33,6 +34,8 @@ function demoExtras() {
   if (open.startsWith("title:")) { const t = byTitle(open.slice(6)); if (t) titleSheet(t); }
   if (open.startsWith("watched:")) { const t = byTitle(open.slice(8)); if (t) watchedSheet(t); }
   if (open === "import") fire("import");
+  const to = params.get("scroll");   // e.g. &scroll=.eps : scroll the open sheet so that part is at the top
+  if (to) setTimeout(() => { const sh = document.querySelector("#sheet-root .sheet"), el = sh && sh.querySelector(to); if (el) sh.scrollTop = el.getBoundingClientRect().top - sh.getBoundingClientRect().top + sh.scrollTop - 70; }, 300);
   if (open === "svc") fire("svc-edit", { id: "netflix" });
   if (open === "yearcard") yearCard(Number(app.today.slice(0, 4))).then(blob => { document.body.style.margin = "0"; document.body.innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="" style="display:block;width:1080px;height:1920px">`; });
 }
