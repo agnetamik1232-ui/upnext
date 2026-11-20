@@ -36,11 +36,13 @@ function demoExtras() {
   if (open.startsWith("watched:")) { const t = byTitle(open.slice(8)); if (t) watchedSheet(t); }
   if (open === "import") fire("import");
   const to = params.get("scroll");   // e.g. &scroll=.eps : scroll the open sheet so that part is at the top
-  if (to) setTimeout(() => {   // shifts the content rather than scrolling, so headless screenshots keep it
+  const shift = () => {   // shifts the content rather than scrolling, so headless screenshots keep it
     const sh = document.querySelector("#sheet-root .sheet"), el = sh && sh.querySelector(to); if (!el) return;
+    [...sh.children].forEach(c => { c.style.transform = ""; });
     const off = Math.round(el.getBoundingClientRect().top - sh.getBoundingClientRect().top - 70);
     sh.style.overflow = "hidden"; [...sh.children].forEach(c => { c.style.transform = `translateY(${-off}px)`; });
-  }, 300);
+  };
+  if (to) { shift(); setTimeout(shift, 300); setTimeout(shift, 1200); }
   if (open === "svc") fire("svc-edit", { id: "netflix" });
   if (open === "yearcard") yearCard(Number(app.today.slice(0, 4))).then(blob => { document.body.style.margin = "0"; document.body.innerHTML = `<img src="${URL.createObjectURL(blob)}" alt="" style="display:block;width:1080px;height:1920px">`; });
 }
