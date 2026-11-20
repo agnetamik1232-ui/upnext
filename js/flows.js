@@ -65,8 +65,20 @@ actions["ep-next"] = el => {
 actions["ep-toggle"] = el => {
   const t = byId(ed?.id); if (!t) return;
   const k = el.dataset.k;
-  commit(s => { const x = s.titles.find(y => y.id === t.id); const seen = { ...x.seen }; if (seen[k]) delete seen[k]; else seen[k] = app.today; x.seen = seen; if (x.status === "watchlist") x.status = "watching"; });
+  commit(s => {
+    const x = s.titles.find(y => y.id === t.id), seen = { ...x.seen };
+    if (seen[k]) delete seen[k];
+    else { const ep = W.episodes(x).find(e => W.epKey(e.s, e.e) === k), when = ed.when || app.today; seen[k] = ep && ep.airdate && ep.airdate > when ? ep.airdate : when; }   // never before it aired
+    x.seen = seen; if (x.status === "watchlist") x.status = "watching";
+  });
   redraw();
+};
+// Which day new ticks count as: today, yesterday, or a date you pick (for "we watched it last night").
+actions["ed-when"] = el => { syncEd(); ed.when = el.dataset.v === "y" ? addDays(app.today, -1) : app.today; redraw(); };
+live["ed-when-date"] = el => {
+  if (!el.value) return;
+  ed.when = el.value > app.today ? app.today : el.value;
+  el.closest(".when-row").querySelectorAll("[data-act=ed-when]").forEach(b => b.setAttribute("aria-pressed", String((b.dataset.v === "y" ? addDays(app.today, -1) : app.today) === ed.when)));
 };
 actions["ep-upto"] = el => {
   const t = byId(ed?.id); if (!t) return;
@@ -89,7 +101,7 @@ let ed = null;
 export function titleSheet(t) {
   const nx = t.kind === "series" ? W.nextEpisode(t, app.today) : null;
   ed = { id: t.id, rating: t.rating || 0, ratings: { ...(t.ratings || {}) }, marks: [...(t.marks || [])], moods: [...(t.moods || [])], with: [...(t.with || [])], status: t.status,
-    season: nx ? nx.s : (t.seasons || [])[0]?.n || 1, draft: {}, details: false, adding: false };
+    season: nx ? nx.s : (t.seasons || [])[0]?.n || 1, draft: {}, details: false, adding: false, when: app.today };
   drawTitle();
 }
 function syncEd() {
@@ -133,7 +145,9 @@ function episodesBlock(t) {
       <div class="r">${seen ? (d && d !== "-" ? esc(fdShort(d)) : "seen") : isNext ? "UP NEXT" : out ? `airs ${esc(fdShort(e.airdate))}` : `<button type="button" class="btn text small" data-act="ep-upto" data-i="${i}">seen up to here</button>`}</div></div>`;
   }).join("");
   const sp = W.progress(t, app.today);
-  return `<div class="field"><span>Episodes <small class="muted" style="display:inline;margin-left:.4rem">${sp.seen} of ${sp.total} seen</small></span>
+  const when = ed.when || app.today, yest = addDays(app.today, -1);
+  const whenRow = `<div class="when-row"><span class="caps">Ticks count as watched</span><div class="seg"><button type="button" data-act="ed-when" data-v="t" aria-pressed="${when === app.today}">Today</button><button type="button" data-act="ed-when" data-v="y" aria-pressed="${when === yest}">Yesterday</button></div><input class="input" type="date" value="${when}" max="${app.today}" data-live="ed-when-date" aria-label="Pick the day you watched"></div>`;
+  return `<div class="field"><span>Episodes <small class="muted" style="display:inline;margin-left:.4rem">${sp.seen} of ${sp.total} seen</small></span>${whenRow}
     ${seasons.length > 1 ? `<div class="seg" style="margin-bottom:.5rem">${seasons.map(n => `<button type="button" data-act="ser-season" data-v="${n}" aria-pressed="${n === s}">Season ${n}</button>`).join("")}</div>` : ""}
     <div class="eps">${rows}</div>${t.tvmaze ? `<p class="small muted" style="margin-top:.5rem">Episode list from <a href="${esc(t.link || "https://www.tvmaze.com")}" target="_blank" rel="noopener">TVmaze</a>. <button type="button" class="btn text small" data-act="ser-find">Refresh</button></p>` : ""}</div>`;
 }

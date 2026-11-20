@@ -1,5 +1,5 @@
 // Up Next — keeps the app working offline, and quietly picks up updates in the background.
-const VERSION = "upnext-1.0.3";
+const VERSION = "upnext-1.0.4";
 const FONTS = "upnext-fonts";
 const FILES = [
   "./", "index.html", "manifest.webmanifest", "css/base.css", "css/looks.css", "css/watch.css",
