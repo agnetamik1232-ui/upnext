@@ -470,7 +470,9 @@ export async function yearCard(Y) {
   cells.forEach(([a, b], i) => {
     const cx = P + (i % 2) * 460, cy = 540 + Math.floor(i / 2) * 170;
     x.fillStyle = gold; x.globalAlpha = .45; x.fillRect(cx, cy, 400, 2); x.globalAlpha = 1;
-    x.fillStyle = fg; x.font = "800 62px Fraunces"; x.fillText(a.length > 12 ? a.slice(0, 12) + "…" : a, cx, cy + 22);
+    let fs = 62; x.font = `800 ${fs}px Fraunces`;
+    while (x.measureText(a).width > 410 && fs > 34) { fs -= 2; x.font = `800 ${fs}px Fraunces`; }
+    x.fillStyle = fg; x.fillText(a, cx, cy + 22 + (62 - fs) * 0.6);
     x.fillStyle = gold; x.font = "700 28px Nunito"; x.fillText(b.length > 28 ? b.slice(0, 27) + "…" : b, cx, cy + 100);
   });
   const favs = S().titles.filter(t => t.rating >= 4 && W.lastActivity(t).startsWith(String(Y))).sort((a, b) => b.rating - a.rating).slice(0, 5);
